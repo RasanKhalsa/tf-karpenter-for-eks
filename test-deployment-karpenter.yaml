@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karpenter-test
+  namespace: default
+  labels:
+    app: karpenter-test
+spec:
+  replicas: 5  # Higher replica count to force new nodes
+  selector:
+    matchLabels:
+      app: karpenter-test
+  template:
+    metadata:
+      labels:
+        app: karpenter-test
+    spec:
+      # FORCE scheduling only on Karpenter nodes
+      nodeSelector:
+        workload-type: "karpenter-managed"
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 500m      # Higher resource requests
+            memory: 512Mi  # to trigger node creation
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      tolerations:
+      - key: "karpenter.sh/unschedulable"
+        operator: "Exists"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: karpenter-only-service
+  namespace: default
+spec:
+  selector:
+    app: karpenter-test
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
