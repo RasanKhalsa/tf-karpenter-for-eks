@@ -72,7 +72,18 @@ resource "aws_iam_policy" "karpenter_controller" {
       {
         Effect = "Allow"
         Action = [
-          "ec2:TerminateInstances",
+          "ec2:TerminateInstances"
+        ]
+        Resource = "*"
+        Condition = {
+          StringLike = {
+            "ec2:ResourceTag/karpenter.sh/nodepool" = "*"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ec2:DeleteLaunchTemplate"
         ]
         Resource = "*"
